@@ -1,0 +1,20 @@
+Screen {
+    align: center middle;
+}
+
+Auto_Caption {
+    align: center middle;
+}
+
+Button {
+    align: center middle;
+    height: 30%;
+    max-width: 80%;
+}
+
+Label {
+    align: center top;
+    height: 10%;
+    align: center middle;
+    width: 100%;
+}
