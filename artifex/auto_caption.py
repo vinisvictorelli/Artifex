@@ -99,4 +99,5 @@ def format_timestamp(seconds: float) -> str:
     millis %= 1000
     return f"{hours:02}:{minutes:02}:{seconds:02},{millis:03}"
 
-mp3_to_srt("scripts/ram_dual_channel.mp3",30)
+if __name__ == "__main__":
+    mp3_to_srt("scripts/ram_dual_channel.mp3",30)

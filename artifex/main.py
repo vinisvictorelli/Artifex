@@ -6,7 +6,7 @@ from textual.widgets import Button, OptionList, Label, Checkbox, Pretty, Input
 from textual.widgets.option_list import Option
 from textual.screen import ModalScreen
 from textual.containers import Horizontal, Vertical
-from scripts.auto_caption import mp3_to_srt
+from artifex.auto_caption import mp3_to_srt
 
 import tkinter as tk
 from tkinter import filedialog
