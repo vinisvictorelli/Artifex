@@ -1,114 +1,214 @@
-from typing import Any
+import sys
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QLineEdit, QPushButton, QLabel, QHBoxLayout,
+    QVBoxLayout, QGridLayout, QWidget, QScrollArea, QFrame, QStackedWidget
+)
+from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtCore import Qt, QPropertyAnimation, QEasingCurve
 
-from textual import on
-from textual.app import App, ComposeResult
-from textual.widgets import Button, OptionList, Label, Checkbox, Pretty, Input
-from textual.widgets.option_list import Option
-from textual.screen import ModalScreen
-from textual.containers import Horizontal, Vertical
+# Main Window
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Artifex")
+        self.setGeometry(50, 50, 1280, 720)
 
-from artifex.auto_caption import mp3_to_srt
+        self.initUI()
 
-import tkinter as tk
-from tkinter import filedialog
+    def initUI(self):
+        # Widgets definition
+        # Sidebar
+        self.sidebar = QWidget(self)
+        self.sidebar.setFixedWidth(0)  # Initially hidden
+        self.sidebar.setObjectName("sidebar")
+        self.sidebar_layout = QVBoxLayout(self.sidebar)
 
-#Global Variables
-file_path = ""
-class SubScreen(ModalScreen):
-    DEFAULT_CSS = """
-        SubScreen {
-            background: $panel;
-            border: solid $boost;
-        }
-    """
+        self.credits_button = QPushButton("Credits", self.sidebar)
+        self.credits_button.setFixedSize(180, 40)
+        self.credits_button.setObjectName('credits_button')
 
-class Auto_Editor(ModalScreen):
+        self.settings_button = QPushButton('Settings', self.sidebar)
+        self.settings_button.setFixedSize(180, 40)
+        self.settings_button.setObjectName('settings_button')
 
-    def compose(self) -> ComposeResult:
-        yield Label("Buy a car!")
-        yield Label("Lots of car-oriented widgets here I guess!")
-        yield Button("Buy!", id="buy")
-        yield Button("Cancel", id="cancel")
+        # Stacked Widget for Central Area
+        self.stacked_widget = QStackedWidget(self)
+        self.stacked_widget.setObjectName('stacked_widget')
 
-    @on(Button.Pressed, "#buy")
-    def buy_it(self) -> None:
-        self.dismiss({
-            "options": "everything -- really we'd ask"
-        })
+        # Search Bar
+        self.search_bar = QLineEdit(self)
+        self.search_bar.setPlaceholderText("Type your search here...")
+        self.search_bar.setObjectName('search_bar')
 
-    @on(Button.Pressed, "#cancel")
-    def cancel_purchase(self) -> None:
-        self.dismiss({})
+        self.search_button = QPushButton(self)
+        self.search_button.setFixedSize(40, 40)
+        self.search_button.setObjectName('search_button')
 
-class Auto_Caption(ModalScreen):
+        # Placeholder Message
+        self.placeholder_message = QLabel("Search for something to see results here.", self)
+        self.placeholder_message.setAlignment(Qt.AlignCenter)
+        self.placeholder_message.setObjectName('placeholder_message')
 
-    def compose(self) -> ComposeResult:
-        # Here we compose up the question screen for a bike.
-        yield Label("Auto Caption generates accurate SRT files by transcribing speech from MP3 audio, making it easy to add captions to your videos.\n",id="label")
-        with Vertical():
-            yield Label("Number of chars per subtitle line:")
-            yield Input(type="integer",id="subtitle_size")
-        with Vertical():
-            yield Label("Select the mp3 file:")
-            yield Button("No file selected",id="file_select")
-        with Horizontal():
-            yield Button("Start Automation", id="auto_caption")
-            yield Button("Back", id="back")
+        # Cards Area
+        self.card_area = QScrollArea(self)
+        self.card_area.setWidgetResizable(True)
+        self.card_area.setObjectName('card_area')
+        self.card_area.hide()
 
-    @on(Button.Pressed, "#auto_caption")
-    def start_auto_caption(self) -> None:
-        # This function start the automation for the auto caption
-        self.query_one("#label").update(f"The automation has started")
-        mp3_to_srt(file_path,int(self.query_one('#subtitle_size').value))
-        self.query_one("#label").update(f"Finished!")
+        self.card_container = QWidget()
+        self.card_container.setObjectName('card_container')
+        self.card_layout = QGridLayout(self.card_container)
+        self.card_layout.setSpacing(10)
+        self.card_area.setWidget(self.card_container)
 
-    @on(Button.Pressed, "#file_select")
-    def file_selection(self) -> None:
-        # This function start the automation for the auto caption
-        root = tk.Tk()
-        root.withdraw()
-        file_path = filedialog.askopenfilename()
-        self.query_one("#label").update(f"the file is in {file_path}")
-        root.destroy()
-        return
+        # Toggle Sidebar Button
+        self.sidebar_button = QPushButton("\u22ee", self)
+        self.sidebar_button.setFixedSize(50, 50)
+        self.sidebar_button.setObjectName('sidebar_button')
 
-    @on(Button.Pressed, "#back")
-    def cancel_purchase(self) -> None:
-        # Cancel was pressed. So here we'll return no-data.
-        self.dismiss({})
+        # Sidebar Animation
+        self.sidebar_animation = QPropertyAnimation(self.sidebar, b"maximumWidth")
+        self.sidebar_animation.setObjectName('sidebar_animation')
+        self.sidebar_animation.setDuration(300)
+        self.sidebar_animation.setEasingCurve(QEasingCurve.InOutQuad)
 
-class VehiclePurchaseApp(App[None]):
-    CSS_PATH = 'styles/styles.css'
-    # Here you could create a structure of all of the types of vehicle, with
-    # their names and the screen that asks the questions.
-    AUTOMATION: dict[str, tuple[str, type[ModalScreen]]] = {
-        "smart_editor": ("Smart Editor", Auto_Editor),
-        "auto_caption": ("Auto Caption", Auto_Caption)
-    }
+        self.sidebar_open = False  # Track the state of the sidebar
 
-    def compose(self) -> ComposeResult:
-        # This builds the initial option list from the vehicles listed above.
-        yield Label("Select the automation")
-        yield OptionList(
-            *[Option(name, identifier) for identifier, (name, _) in self.AUTOMATION.items()]
-        )
-        # The `Pretty` is just somewhere to show the result. See
-        # selection_made below.
-        yield Pretty("")
+        # Layout Configuration
+        # Sidebar Layout
+        self.sidebar_layout.setAlignment(Qt.AlignTop)
+        self.sidebar_layout.setSpacing(2)
+        self.sidebar_layout.addWidget(self.credits_button)
+        self.sidebar_layout.addWidget(self.settings_button)
+        
+        # Search Layout
+        search_layout = QHBoxLayout()
+        search_layout.setAlignment(Qt.AlignCenter)
+        search_layout.setObjectName('search_layout')
+        search_layout.addStretch(1)
+        search_layout.addWidget(self.search_bar, stretch=5)
+        search_layout.addWidget(self.search_button, stretch=1)
+        search_layout.addStretch(1)
 
-    def selection_made(self, selection: dict[str, Any]) -> None:
-        # This is the method that receives the selection after the user has
-        # asked to buy the vehicle. For now I'm just dumping the selection
-        # into a `Pretty` widget to show it.
-        self.query_one(Pretty).update(selection)
+        # Central Layout
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        self.main_layout = QHBoxLayout(self.central_widget)
 
-    @on(OptionList.OptionSelected)
-    def next_screen(self, event: OptionList.OptionSelected) -> None:
-        # If the ID of the option that was selected is known to us...
-        if event.option_id in self.AUTOMATION:
-            # ...create an instance of the screen associated with it, push
-            # it and set up the callback.
-            self.push_screen(self.AUTOMATION[event.option_id][1](), callback=self.selection_made)
+        self.central_area = QWidget(self)
+        self.central_area.setObjectName('central_area')
+        self.central_layout = QVBoxLayout(self.central_area)
+        self.central_layout.setObjectName('central_layout')
+        self.central_layout.setAlignment(Qt.AlignTop)
+
+        self.central_layout.addWidget(self.sidebar_button, alignment=Qt.AlignLeft)
+        self.central_layout.addLayout(search_layout)
+        self.central_layout.addSpacing(5)
+        self.central_layout.addWidget(self.placeholder_message, alignment=Qt.AlignCenter)
+        self.central_layout.addWidget(self.card_area)
+
+        # Main Layout
+        self.main_layout.addWidget(self.sidebar)
+        self.sidebar.setMaximumWidth(0)  # Set initial width to 0 (hidden)
+        self.main_layout.addWidget(self.stacked_widget)
+
+        # Add Pages to Stacked Widget
+        self.add_search_page()
+        self.add_credits_page()
+        self.add_settings_page()
+
+        # Signal Connections
+        self.sidebar_button.clicked.connect(self.toggle_sidebar)
+        self.search_button.clicked.connect(self.search_action)
+        self.credits_button.clicked.connect(self.show_credits_page)
+        self.settings_button.clicked.connect(self.show_settings_page)
+
+    def add_search_page(self):
+        search_page = QWidget()
+        search_layout = QVBoxLayout(search_page)
+        search_layout.addWidget(self.central_area)
+        self.stacked_widget.addWidget(search_page)
+
+    def add_credits_page(self):
+        credits_page = QWidget()
+        credits_layout = QVBoxLayout(credits_page)
+        credits_label = QLabel("Credits Page\nThis is where you can add credits information.", credits_page)
+        credits_label.setAlignment(Qt.AlignCenter)
+        credits_layout.addWidget(credits_label)
+        self.stacked_widget.addWidget(credits_page)
+
+    def add_settings_page(self):
+        settings_page = QWidget()
+        settings_layout = QVBoxLayout(settings_page)
+        settings_label = QLabel("Settings Page\nThis is where you can add settings options.", settings_page)
+        settings_label.setAlignment(Qt.AlignCenter)
+        settings_layout.addWidget(settings_label)
+        self.stacked_widget.addWidget(settings_page)
+
+    def toggle_sidebar(self):
+        if self.sidebar_open:
+            self.sidebar_animation.setStartValue(300)
+            self.sidebar.setFixedWidth(0)
+            self.sidebar_animation.setEndValue(0)
+        else:
+            self.sidebar_animation.setStartValue(0)
+            self.sidebar.setFixedWidth(200)
+            self.sidebar_animation.setEndValue(300)
+            
+        self.sidebar_animation.start()
+        self.sidebar_open = not self.sidebar_open
+
+    def search_action(self):
+        query = self.search_bar.text().strip()
+        if not query:
+            return
+
+        self.placeholder_message.hide()
+        self.card_area.show()
+
+        for i in reversed(range(self.card_layout.count())):
+            widget = self.card_layout.itemAt(i).widget()
+            if widget:
+                widget.deleteLater()
+
+        for i in range(10):
+            card = self.create_card(f"Result {i + 1}", f"Description for result {i + 1}.")
+            self.card_layout.addWidget(card, i // 2, i % 2)
+
+    def create_card(self, title, description):
+        card = QFrame(self)
+        card_layout = QVBoxLayout(card)
+
+        image_label = QLabel(self)
+        image_label.setAlignment(Qt.AlignCenter)
+
+        title_label = QLabel(title, self)
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setObjectName('title_label')
+
+        description_label = QLabel(description, self)
+        description_label.setObjectName('description_label')
+        description_label.setWordWrap(True)
+        description_label.setAlignment(Qt.AlignCenter)
+
+        card_layout.addWidget(image_label)
+        card_layout.addWidget(title_label)
+        card_layout.addWidget(description_label)
+
+        return card
+
+    def show_credits_page(self):
+        self.stacked_widget.setCurrentIndex(1)
+
+    def show_settings_page(self):
+        self.stacked_widget.setCurrentIndex(2)
+
 
 if __name__ == "__main__":
-    VehiclePurchaseApp().run()
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    with open("artifex/styles/styles.css", "r") as f:
+        _style = f.read()
+        app.setStyleSheet(_style)
+    sys.exit(app.exec_())
