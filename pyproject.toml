@@ -1,15 +1,15 @@
-[project]
+[tool.poetry]
 name = "Artifex"
 version = "0.1.0"
 description = "Artifex simplifies content creation with smart automation, helping you create faster and focus on your ideas."
-authors = [
-    {name = "vinisvictorelli",email = "vini.svictorelli@gmail.com"}
-]
+authors = ["vinisvictorelli <vini.svictorelli@gmail.com>"]
+license = "GPLv3"
 readme = "README.md"
+
 
 [tool.poetry.dependencies]
 python = ">=3.12,<4"
-torch = "==2.2.2",
+torch = "==2.2.2"
 numpy = "<2"
 moviepy = "==2.1.1"
 pydub = "==0.25.1"

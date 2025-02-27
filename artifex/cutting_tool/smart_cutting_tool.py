@@ -1,6 +1,6 @@
 import os
 from moviepy import VideoFileClip, concatenate_videoclips
-from extract_audio import extract_audio
+from artifex.extract_audio.extract_audio import extract_audio
 import speech_recognition as sr
 from pydub import AudioSegment
 from pydub.silence import detect_nonsilent

@@ -6,6 +6,7 @@ from textual.widgets import Button, OptionList, Label, Checkbox, Pretty, Input
 from textual.widgets.option_list import Option
 from textual.screen import ModalScreen
 from textual.containers import Horizontal, Vertical
+
 from artifex.auto_caption import mp3_to_srt
 
 import tkinter as tk
@@ -77,7 +78,7 @@ class Auto_Caption(ModalScreen):
         self.dismiss({})
 
 class VehiclePurchaseApp(App[None]):
-    CSS_PATH = 'styles.css'
+    CSS_PATH = 'styles/styles.css'
     # Here you could create a structure of all of the types of vehicle, with
     # their names and the screen that asks the questions.
     AUTOMATION: dict[str, tuple[str, type[ModalScreen]]] = {
